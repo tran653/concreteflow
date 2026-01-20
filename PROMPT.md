@@ -51,12 +51,42 @@ concreteflow/
 3. Exécuter les tests après chaque implémentation
 4. Mettre à jour @fix_plan.md et la documentation
 
+## Normes de Calcul Supportées
+
+L'application supporte plusieurs normes de calcul de structures béton :
+
+| Norme | Code | Région | Description |
+|-------|------|--------|-------------|
+| Eurocode 2 | EC2 | Europe | Norme européenne actuelle |
+| ACI 318 | ACI | USA | American Concrete Institute |
+| BAEL 91 | BAEL | France | Ancienne norme française |
+| BS 8110 | BS | UK | British Standard (historique) |
+| CSA A23.3 | CSA | Canada | Canadian Standards Association |
+
+### Architecture des Normes
+```
+backend/app/services/calculs/normes/
+├── __init__.py
+├── base.py          # Classe abstraite NormeBase
+├── eurocode.py      # Implémentation Eurocode 2
+├── aci318.py        # Implémentation ACI 318
+├── bael.py          # Implémentation BAEL 91
+└── factory.py       # NormeFactory pour instanciation
+```
+
+### Différences Clés entre Normes
+- **Coefficients de sécurité** : γc (béton), γs (acier) varient selon la norme
+- **Formules de flexion** : Approches rectangulaire vs parabolique
+- **Cisaillement** : Méthodes de calcul différentes
+- **Enrobage** : Exigences minimales différentes
+
 ## Principes Clés
 - **UNE tâche par boucle** - focus sur le plus important
 - Chercher dans le codebase avant d'assumer qu'une fonctionnalité n'existe pas
 - Écrire des tests pour les nouvelles fonctionnalités
 - Commiter les changements fonctionnels avec des messages descriptifs
-- Respecter les normes Eurocode pour tous les calculs structurels
+- **Implémenter les calculs selon la norme sélectionnée par l'utilisateur**
+- Utiliser le pattern Factory pour instancier la bonne norme
 
 ## Commandes Utiles
 

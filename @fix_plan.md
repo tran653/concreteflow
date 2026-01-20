@@ -1,5 +1,36 @@
 # ConcreteFlow - Plan de Développement
 
+## Priorité Haute - Support Multi-Normes (Eurocode + Autres)
+
+### Backend - Architecture des Normes
+- [ ] Créer l'enum `NormeType` (EUROCODE_2, ACI_318, BAEL_91, BS_8110, CSA_A23)
+- [ ] Créer le module `backend/app/services/calculs/normes/` avec une classe abstraite `NormeBase`
+- [ ] Implémenter `EurocodeNorme` (norme actuelle, refactoriser depuis le code existant)
+- [ ] Implémenter `ACI318Norme` (norme américaine ACI 318)
+- [ ] Implémenter `BAELNorme` (ancienne norme française BAEL 91)
+- [ ] Créer une factory `NormeFactory.get_norme(norme_type)` pour instancier la bonne norme
+
+### Backend - Intégration aux Calculs
+- [ ] Ajouter le champ `norme: NormeType` au modèle `Projet` (norme par défaut du projet)
+- [ ] Ajouter le champ `norme: NormeType` au modèle `Calcul` (peut override le projet)
+- [ ] Créer la migration Alembic pour les nouveaux champs
+- [ ] Modifier les services de calcul pour utiliser `NormeFactory`
+- [ ] Adapter les formules de flexion selon la norme sélectionnée
+- [ ] Adapter les formules de cisaillement selon la norme
+- [ ] Adapter les coefficients de sécurité selon la norme
+
+### Frontend - Sélection de Norme
+- [ ] Créer le composant `NormeSelector` (dropdown avec les normes disponibles)
+- [ ] Ajouter le sélecteur de norme dans le formulaire de création de projet
+- [ ] Ajouter le sélecteur de norme dans l'éditeur de calcul
+- [ ] Afficher la norme utilisée dans les résultats de calcul
+- [ ] Ajouter une icône/badge indiquant la norme (EC2, ACI, BAEL...)
+
+### Documentation des Normes
+- [ ] Créer `specs/normes/eurocode_ec2.md` avec les formules clés
+- [ ] Créer `specs/normes/aci_318.md` avec les différences vs Eurocode
+- [ ] Créer `specs/normes/bael_91.md` avec les formules françaises
+
 ## Priorité Haute - Dashboard & Statistiques
 
 - [ ] Créer l'endpoint API `GET /api/v1/dashboard/stats` (nombre projets, calculs, utilisateurs)
