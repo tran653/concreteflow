@@ -1,11 +1,11 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, Enum, JSON, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 import uuid
 import enum
 
 from app.core.database import Base
+from app.core.types import GUID
 
 
 class TypeProduit(str, enum.Enum):
@@ -30,9 +30,9 @@ class Calcul(Base):
     """Structural calculation model."""
     __tablename__ = "calculs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    projet_id = Column(UUID(as_uuid=True), ForeignKey("projets.id"), nullable=False)
-    plan_id = Column(UUID(as_uuid=True), ForeignKey("plans.id"), nullable=True)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    projet_id = Column(GUID(), ForeignKey("projets.id"), nullable=False)
+    plan_id = Column(GUID(), ForeignKey("plans.id"), nullable=True)
 
     # Calculation info
     name = Column(String(255), nullable=False)

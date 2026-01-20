@@ -1,19 +1,19 @@
 """Modèles pour les cahiers de portées limites."""
 from sqlalchemy import Column, String, DateTime, ForeignKey, Integer, Float, JSON, Text, Index
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 import uuid
 
 from app.core.database import Base
+from app.core.types import GUID
 
 
 class CahierPortees(Base):
     """Cahier de portées limites d'un fabricant."""
     __tablename__ = "cahiers_portees"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    fabricant_id = Column(UUID(as_uuid=True), ForeignKey("fabricants.id"), nullable=False)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    fabricant_id = Column(GUID(), ForeignKey("fabricants.id"), nullable=False)
 
     # Métadonnées du cahier
     nom = Column(String(255), nullable=False)  # Ex: "Gamme standard 2024"
@@ -45,8 +45,8 @@ class LigneCahierPortees(Base):
     """Ligne individuelle du cahier de portées limites."""
     __tablename__ = "lignes_cahier_portees"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    cahier_id = Column(UUID(as_uuid=True), ForeignKey("cahiers_portees.id"), nullable=False)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    cahier_id = Column(GUID(), ForeignKey("cahiers_portees.id"), nullable=False)
 
     # Identification poutrelle
     reference_poutrelle = Column(String(100), nullable=False)  # Ex: "BP 113", "SP 114"

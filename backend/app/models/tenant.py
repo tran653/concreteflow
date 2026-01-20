@@ -1,17 +1,17 @@
 from sqlalchemy import Column, String, DateTime, JSON, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 import uuid
 
 from app.core.database import Base
+from app.core.types import GUID
 
 
 class Tenant(Base):
     """Multi-tenant organization model."""
     __tablename__ = "tenants"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     slug = Column(String(100), unique=True, nullable=False, index=True)
 

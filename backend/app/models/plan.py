@@ -1,18 +1,18 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, JSON, Float
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 import uuid
 
 from app.core.database import Base
+from app.core.types import GUID
 
 
 class Plan(Base):
     """Floor plan model - represents a level/floor in a project."""
     __tablename__ = "plans"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    projet_id = Column(UUID(as_uuid=True), ForeignKey("projets.id"), nullable=False)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    projet_id = Column(GUID(), ForeignKey("projets.id"), nullable=False)
 
     # Plan info
     name = Column(String(255), nullable=False)  # e.g., "RDC", "Niveau 1", "Toiture"

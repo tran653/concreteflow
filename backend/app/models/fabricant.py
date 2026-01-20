@@ -1,19 +1,19 @@
 """Modèle Fabricant de poutrelles précontraintes."""
 from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 import uuid
 
 from app.core.database import Base
+from app.core.types import GUID
 
 
 class Fabricant(Base):
     """Fabricant de poutrelles précontraintes."""
     __tablename__ = "fabricants"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(GUID(), ForeignKey("tenants.id"), nullable=False)
 
     # Informations fabricant
     nom = Column(String(255), nullable=False)

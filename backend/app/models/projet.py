@@ -1,11 +1,11 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, Enum, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 import uuid
 import enum
 
 from app.core.database import Base
+from app.core.types import GUID
 
 
 class ProjetStatus(str, enum.Enum):
@@ -21,8 +21,8 @@ class Projet(Base):
     """Construction project model."""
     __tablename__ = "projets"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(GUID(), ForeignKey("tenants.id"), nullable=False)
 
     # Project info
     reference = Column(String(50), nullable=False, index=True)  # Internal reference

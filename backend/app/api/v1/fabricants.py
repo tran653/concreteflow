@@ -21,7 +21,7 @@ from app.schemas.fabricant import (
     ImportCahierResponse
 )
 from app.api.deps import get_current_active_user, require_admin, require_engineer
-from app.services.import.cahier_portees_importer import CahierPorteesImporter
+from app.services.importer.cahier_portees_importer import CahierPorteesImporter
 
 router = APIRouter(prefix="/fabricants", tags=["Fabricants"])
 
