@@ -31,9 +31,12 @@ concreteflow/
 │   │   ├── models/          # Modèles SQLAlchemy
 │   │   ├── schemas/         # Schémas Pydantic
 │   │   └── services/
-│   │       ├── calculs/     # Moteurs de calcul Eurocode
-│   │       └── importer/    # Import de données
+│   │       ├── calculs/     # Moteurs de calcul
+│   │       │   └── normes/  # Implémentations multi-normes
+│   │       ├── importer/    # Import de données
+│   │       └── import/      # Import PDF plans
 │   ├── alembic/             # Migrations DB
+│   ├── uploads/             # Fichiers uploadés (DXF, PDF)
 │   └── main.py
 ├── frontend/
 │   └── src/
@@ -44,6 +47,33 @@ concreteflow/
 │       └── types/           # Types TypeScript
 └── docker-compose.yml
 ```
+
+## Import PDF Plans Béton Armé
+
+L'application permet d'importer des plans PDF de béton armé pour extraire automatiquement les données de calcul (poutrelles-hourdis).
+
+### Dépendances PDF (à ajouter à requirements.txt)
+```
+pdfplumber>=0.10.0      # Extraction de texte et tableaux
+PyPDF2>=3.0.0           # Manipulation PDF
+pdf2image>=1.16.0       # Conversion PDF vers images
+pytesseract>=0.3.10     # OCR pour plans scannés
+Pillow>=10.0.0          # Traitement d'images
+```
+
+### Données Extraites du PDF
+- **Portées** : longueurs des travées en mètres
+- **Poutrelles** : références fabricant, type
+- **Dalle** : épaisseur de compression
+- **Charges** : permanentes (G), exploitation (Q)
+- **Entre-axes** : espacement des poutrelles
+
+### Workflow Import
+1. Upload du PDF (plan béton armé)
+2. Extraction automatique (texte + OCR si nécessaire)
+3. Affichage des données extraites pour validation
+4. Correction manuelle si nécessaire
+5. Lancement du calcul avec données validées
 
 ## Objectifs Actuels
 1. Consulter @fix_plan.md pour les priorités

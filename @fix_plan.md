@@ -31,6 +31,56 @@
 - [ ] Créer `specs/normes/aci_318.md` avec les différences vs Eurocode
 - [ ] Créer `specs/normes/bael_91.md` avec les formules françaises
 
+## Priorité Haute - Import PDF Plans Béton Armé (Poutrelles-Hourdis)
+
+### Backend - Extraction PDF
+- [ ] Installer les dépendances PDF : `pdfplumber`, `PyPDF2`, `pdf2image`
+- [ ] Installer Tesseract OCR pour les plans scannés : `pytesseract`
+- [ ] Créer le service `backend/app/services/import/pdf_plan_extractor.py`
+- [ ] Implémenter l'extraction de texte des PDF (tableaux, annotations)
+- [ ] Implémenter l'OCR pour les PDF scannés/images
+- [ ] Créer le parser pour identifier les données de plancher :
+  - Portées (longueurs en mètres)
+  - Types de poutrelles (références fabricant)
+  - Épaisseur de dalle de compression
+  - Charges (permanentes, exploitation)
+  - Entre-axes des poutrelles
+
+### Backend - API Import
+- [ ] Créer l'endpoint `POST /api/v1/calculs/poutrelles/import-pdf`
+- [ ] Valider le fichier PDF (taille max, format)
+- [ ] Stocker le PDF original dans `uploads/plans/`
+- [ ] Retourner les données extraites en JSON pour validation
+- [ ] Créer l'endpoint `POST /api/v1/calculs/poutrelles/confirm-import` pour confirmer
+
+### Backend - Analyse Intelligente du Plan
+- [ ] Détecter automatiquement le format du plan (tableau, schéma, mixte)
+- [ ] Extraire les cotes dimensionnelles du plan
+- [ ] Identifier les références de poutrelles dans le cartouche
+- [ ] Parser les tableaux de charges si présents
+- [ ] Gérer les différents formats de plans (Autocad export, scan, dessin)
+
+### Frontend - Interface Import PDF
+- [ ] Créer le composant `PdfPlanUploader` avec drag & drop
+- [ ] Afficher la prévisualisation du PDF uploadé (react-pdf)
+- [ ] Créer le composant `ExtractedDataReview` pour valider les données
+- [ ] Afficher les données extraites dans un formulaire éditable
+- [ ] Permettre la correction manuelle des données mal extraites
+- [ ] Ajouter un indicateur de confiance pour chaque donnée extraite
+- [ ] Bouton "Lancer le calcul" après validation
+
+### Frontend - Intégration Calcul Poutrelles
+- [ ] Ajouter l'option "Importer depuis PDF" dans la page de calcul poutrelles
+- [ ] Pré-remplir le formulaire de calcul avec les données extraites
+- [ ] Conserver le lien vers le PDF source dans le calcul
+- [ ] Afficher une miniature du plan dans les résultats
+
+### Tests & Validation
+- [ ] Créer des PDF de test (différents formats de plans)
+- [ ] Tester l'extraction sur des plans réels de bureaux d'études
+- [ ] Valider la précision de l'OCR sur les plans scannés
+- [ ] Gérer les cas d'erreur (PDF illisible, format inconnu)
+
 ## Priorité Haute - Dashboard & Statistiques
 
 - [ ] Créer l'endpoint API `GET /api/v1/dashboard/stats` (nombre projets, calculs, utilisateurs)
