@@ -6,6 +6,7 @@ import enum
 
 from app.core.database import Base
 from app.core.types import GUID
+from app.services.calculs.normes import NormeType
 
 
 class ProjetStatus(str, enum.Enum):
@@ -43,6 +44,9 @@ class Projet(Base):
 
     # Status
     status = Column(Enum(ProjetStatus), default=ProjetStatus.DRAFT, nullable=False)
+
+    # Calculation norm (default norm for all calculations in this project)
+    norme = Column(Enum(NormeType), default=NormeType.EC2, nullable=False)
 
     # Dates
     date_start = Column(DateTime)

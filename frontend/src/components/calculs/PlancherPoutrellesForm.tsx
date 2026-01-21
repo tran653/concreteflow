@@ -279,7 +279,7 @@ export default function PlancherPoutrellesForm({ parametres, onChange }: Props) 
           >
             {Object.entries(optimisationLabels).map(([value, label]) => (
               <option key={value} value={value}>
-                {label}
+                {label as string}
               </option>
             ))}
           </select>

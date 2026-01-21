@@ -128,6 +128,42 @@ export const calculsApi = {
     const response = await api.get(`/calculs/${id}/results`)
     return response.data
   },
+
+  importPdf: async (file: File, useOcr = false): Promise<PdfExtractionResult> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post(`/calculs/import-pdf?use_ocr=${useOcr}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  },
+}
+
+// PDF Extraction types
+export interface ExtractedValue {
+  value: number | string
+  confidence: number
+  source: string
+}
+
+export interface PdfExtractionResult {
+  success: boolean
+  filename: string
+  extraction_confidence: number
+  data: {
+    portees: (ExtractedValue | null)[]
+    poutrelles: (ExtractedValue | null)[]
+    charges_permanentes: (ExtractedValue | null)[]
+    charges_exploitation: (ExtractedValue | null)[]
+    entre_axes: (ExtractedValue | null)[]
+    epaisseur_dalle: ExtractedValue | null
+    type_hourdis: ExtractedValue | null
+  }
+  raw_text_preview: string | null
+  tables_found: number
+  message: string
 }
 
 // Plans API
@@ -188,6 +224,13 @@ export const exportsApi = {
 
   downloadQuantitatif: async (projetId: string): Promise<Blob> => {
     const response = await api.get(`/exports/projet/${projetId}/quantitatif`, {
+      responseType: 'blob',
+    })
+    return response.data
+  },
+
+  downloadPlanDePose: async (calculId: string): Promise<Blob> => {
+    const response = await api.get(`/exports/calcul/${calculId}/plan-de-pose`, {
       responseType: 'blob',
     })
     return response.data

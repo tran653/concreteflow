@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { calculsApi, projetsApi } from '@/services/api'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -13,13 +13,14 @@ import {
   Search,
 } from 'lucide-react'
 import { cn, statusLabels, statusColors, formatDate, typeProduitLabels } from '@/lib/utils'
-import type { CalculCreate, TypeProduit } from '@/types'
+import type { CalculCreate, TypeProduit, NormeType } from '@/types'
+import { NormeSelector, NormeBadge } from '@/components/common'
 
 const calculSchema = z.object({
   projet_id: z.string().min(1, 'Projet requis'),
   name: z.string().min(1, 'Nom requis'),
   type_produit: z.enum(['poutrelle', 'predalle', 'dalle_alveolaire', 'poutre', 'dalle_pleine']),
-  norme: z.string().default('EC2'),
+  norme: z.enum(['EC2', 'ACI318', 'BAEL91', 'BS8110', 'CSA_A23']).default('EC2'),
 })
 
 const typesProduit: { value: TypeProduit; label: string }[] = [
@@ -52,6 +53,7 @@ export default function CalculsPage() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<CalculCreate>({
     resolver: zodResolver(calculSchema),
@@ -160,7 +162,7 @@ export default function CalculsPage() {
                     {typeProduitLabels[calcul.type_produit]}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {calcul.norme}
+                    <NormeBadge norme={calcul.norme} size="sm" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -256,17 +258,18 @@ export default function CalculsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Norme de calcul
-                </label>
-                <select
-                  {...register('norme')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
-                >
-                  <option value="EC2">Eurocode 2</option>
-                  <option value="BPEL">BPEL 91</option>
-                  <option value="DTU">DTU 23.2</option>
-                </select>
+                <Controller
+                  name="norme"
+                  control={control}
+                  render={({ field }) => (
+                    <NormeSelector
+                      value={field.value as NormeType}
+                      onChange={field.onChange}
+                      label="Norme de calcul"
+                      description="Norme utilisée pour ce calcul"
+                    />
+                  )}
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-4">

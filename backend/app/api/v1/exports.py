@@ -14,7 +14,8 @@ from app.models.projet import Projet
 from app.models.calcul import Calcul, CalculStatus
 from app.models.element import Element
 from app.api.deps import get_current_active_user
-from app.services.export import generate_note_calcul, ExcelGenerator
+from app.services.export import generate_note_calcul, ExcelGenerator, generate_plan_de_pose_from_calcul
+from app.models.calcul import TypeProduit
 
 router = APIRouter(prefix="/exports", tags=["Exports"])
 
@@ -77,6 +78,83 @@ async def export_calcul_pdf(
 
     return StreamingResponse(
         BytesIO(pdf_content),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
+
+
+@router.get("/calcul/{calcul_id}/plan-de-pose")
+async def export_plan_de_pose(
+    calcul_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Exporte le plan de pose en PDF pour un plancher poutrelles-hourdis.
+
+    Le plan de pose montre:
+    - La disposition des poutrelles
+    - L'espacement (entraxe)
+    - Les dimensions du plancher
+    - Les informations techniques
+    """
+    # Récupérer le calcul
+    result = await db.execute(
+        select(Calcul).join(Projet).where(
+            Calcul.id == calcul_id,
+            Projet.tenant_id == current_user.tenant_id
+        )
+    )
+    calcul = result.scalar_one_or_none()
+
+    if not calcul:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Calcul non trouvé"
+        )
+
+    if calcul.status != CalculStatus.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le calcul doit être terminé pour exporter le plan de pose"
+        )
+
+    if calcul.type_produit != TypeProduit.PLANCHER_POUTRELLES_HOURDIS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le plan de pose n'est disponible que pour les planchers poutrelles-hourdis"
+        )
+
+    # Récupérer le projet
+    result = await db.execute(
+        select(Projet).where(Projet.id == calcul.projet_id)
+    )
+    projet = result.scalar_one_or_none()
+
+    # Préparer les données
+    calcul_dict = {
+        "name": calcul.name,
+        "computed_at": calcul.computed_at.isoformat() if calcul.computed_at else None,
+        "parametres": calcul.parametres,
+        "resultats": calcul.resultats
+    }
+
+    projet_dict = {
+        "name": projet.name if projet else "N/A",
+        "reference": projet.reference if projet else "N/A",
+        "client_name": projet.client_name if projet else "N/A"
+    }
+
+    # Générer le PDF
+    pdf_buffer = generate_plan_de_pose_from_calcul(calcul_dict, projet_dict)
+
+    # Retourner le fichier
+    filename = f"plan_de_pose_{calcul.name.replace(' ', '_')}.pdf"
+
+    return StreamingResponse(
+        pdf_buffer,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f'attachment; filename="{filename}"'

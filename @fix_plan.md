@@ -3,28 +3,28 @@
 ## Priorité Haute - Support Multi-Normes (Eurocode + Autres)
 
 ### Backend - Architecture des Normes
-- [ ] Créer l'enum `NormeType` (EUROCODE_2, ACI_318, BAEL_91, BS_8110, CSA_A23)
-- [ ] Créer le module `backend/app/services/calculs/normes/` avec une classe abstraite `NormeBase`
-- [ ] Implémenter `EurocodeNorme` (norme actuelle, refactoriser depuis le code existant)
-- [ ] Implémenter `ACI318Norme` (norme américaine ACI 318)
-- [ ] Implémenter `BAELNorme` (ancienne norme française BAEL 91)
-- [ ] Créer une factory `NormeFactory.get_norme(norme_type)` pour instancier la bonne norme
+- [x] Créer l'enum `NormeType` (EUROCODE_2, ACI_318, BAEL_91, BS_8110, CSA_A23)
+- [x] Créer le module `backend/app/services/calculs/normes/` avec une classe abstraite `NormeBase`
+- [x] Implémenter `EurocodeNorme` (norme actuelle, refactoriser depuis le code existant)
+- [x] Implémenter `ACI318Norme` (norme américaine ACI 318)
+- [x] Implémenter `BAELNorme` (ancienne norme française BAEL 91)
+- [x] Créer une factory `NormeFactory.get_norme(norme_type)` pour instancier la bonne norme
 
 ### Backend - Intégration aux Calculs
-- [ ] Ajouter le champ `norme: NormeType` au modèle `Projet` (norme par défaut du projet)
-- [ ] Ajouter le champ `norme: NormeType` au modèle `Calcul` (peut override le projet)
-- [ ] Créer la migration Alembic pour les nouveaux champs
-- [ ] Modifier les services de calcul pour utiliser `NormeFactory`
-- [ ] Adapter les formules de flexion selon la norme sélectionnée
-- [ ] Adapter les formules de cisaillement selon la norme
-- [ ] Adapter les coefficients de sécurité selon la norme
+- [x] Ajouter le champ `norme: NormeType` au modèle `Projet` (norme par défaut du projet)
+- [x] Ajouter le champ `norme: NormeType` au modèle `Calcul` (peut override le projet)
+- [x] Créer la migration Alembic pour les nouveaux champs
+- [x] Modifier les services de calcul pour utiliser `NormeFactory`
+- [x] Adapter les formules de flexion selon la norme sélectionnée
+- [x] Adapter les formules de cisaillement selon la norme
+- [x] Adapter les coefficients de sécurité selon la norme
 
 ### Frontend - Sélection de Norme
-- [ ] Créer le composant `NormeSelector` (dropdown avec les normes disponibles)
+- [x] Créer le composant `NormeSelector` (dropdown avec les normes disponibles)
+- [x] Créer le composant `NormeBadge` pour afficher la norme
 - [ ] Ajouter le sélecteur de norme dans le formulaire de création de projet
 - [ ] Ajouter le sélecteur de norme dans l'éditeur de calcul
 - [ ] Afficher la norme utilisée dans les résultats de calcul
-- [ ] Ajouter une icône/badge indiquant la norme (EC2, ACI, BAEL...)
 
 ### Documentation des Normes
 - [ ] Créer `specs/normes/eurocode_ec2.md` avec les formules clés
@@ -137,6 +137,9 @@
 - [x] Visualisation canvas (Konva)
 - [x] Gestion des fabricants
 - [x] Import cahiers de portées
+- [x] Support Multi-Normes Backend (EC2, ACI 318, BAEL 91)
+- [x] NormeFactory et architecture modulaire
+- [x] Composants frontend NormeSelector et NormeBadge
 
 ## Corrections de Bugs
 
@@ -147,8 +150,16 @@
 ## Notes de Progression
 
 ### Dernière mise à jour
-- Date: (à mettre à jour par Ralph)
-- Dernière tâche complétée: (à mettre à jour par Ralph)
+- Date: 2026-01-20
+- Dernière tâche complétée: Support Multi-Normes (Backend + Frontend components)
 
 ### Découvertes & Décisions
-- (Ralph ajoutera ici les découvertes importantes)
+- Architecture multi-normes implémentée avec pattern Factory
+- 3 normes disponibles: Eurocode 2 (EC2), ACI 318, BAEL 91
+- BS 8110 et CSA A23.3 prévues mais non implémentées
+- Les coefficients de sécurité varient selon la norme:
+  - EC2: γc=1.5, γs=1.15, γg=1.35, γq=1.5
+  - ACI 318: utilise facteurs φ (0.90 flexion, 0.75 cisaillement)
+  - BAEL 91: γb=1.5, γs=1.15, γg=1.35, γq=1.5
+- API endpoint `/api/v1/calculs/normes` pour lister les normes disponibles
+- Frontend: NormeSelector et NormeBadge créés dans components/common/

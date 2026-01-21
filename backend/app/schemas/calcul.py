@@ -1,9 +1,10 @@
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 from uuid import UUID
 
 from app.models.calcul import TypeProduit, CalculStatus
+from app.services.calculs.normes import NormeType
 
 
 class CalculParametres(BaseModel):
@@ -20,6 +21,9 @@ class CalculParametres(BaseModel):
     conditions: Dict[str, Any] = {}
     # { "classe_exposition": "XC1", "duree_vie": 50, "classe_feu": "R60" }
 
+    # Pour plancher poutrelles-hourdis
+    cahier_portees_id: Optional[str] = None
+
 
 class CalculResultats(BaseModel):
     """Output results from structural calculation."""
@@ -34,7 +38,7 @@ class CalculResultats(BaseModel):
 class CalculBase(BaseModel):
     name: str
     type_produit: TypeProduit
-    norme: str = "EC2"
+    norme: NormeType = NormeType.EC2
 
 
 class CalculCreate(CalculBase):
@@ -79,3 +83,19 @@ class CalculListResponse(BaseModel):
 class CalculRunRequest(BaseModel):
     """Request to run a calculation."""
     force: bool = False  # Force recalculation even if already computed
+
+
+class NormeInfo(BaseModel):
+    """Information about a calculation norm."""
+    code: str
+    display_name: str
+    region: str
+    implemented: bool
+    classes_beton: Optional[List[str]] = None
+    classes_acier: Optional[List[str]] = None
+    coefficients: Optional[Dict[str, float]] = None
+
+
+class NormeListResponse(BaseModel):
+    """List of available norms."""
+    normes: List[NormeInfo]

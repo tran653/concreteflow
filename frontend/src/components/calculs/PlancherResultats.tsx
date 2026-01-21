@@ -1,20 +1,38 @@
 /**
  * Affichage des résultats du calcul plancher poutrelles-hourdis.
  */
-import { CheckCircle, XCircle, AlertCircle, Loader2, Info } from 'lucide-react'
+import { useState } from 'react'
+import { CheckCircle, XCircle, AlertCircle, Loader2, Info, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { CalculResultats, CalculStatus } from '@/types'
+import { exportsApi, downloadFile } from '@/services/api'
+import type { Calcul } from '@/types'
 
 interface Props {
-  resultats: CalculResultats
-  status: CalculStatus
-  errorMessage?: string
+  calcul: Calcul
 }
 
-export default function PlancherResultats({ resultats, status, errorMessage }: Props) {
-  const isComputed = status === 'completed'
-  const verificationOk = resultats.verification?.ratio_utilisation_pct !== undefined
-    && resultats.verification.ratio_utilisation_pct <= 100
+export default function PlancherResultats({ calcul }: Props) {
+  const [downloadingPlanDePose, setDownloadingPlanDePose] = useState(false)
+
+  const status = calcul.status?.toLowerCase()
+  const resultats = calcul.resultats || {}
+  const errorMessage = calcul.error_message
+  const verificationOk = resultats.verification_ok === true ||
+    (resultats.verification?.ratio_utilisation_pct !== undefined
+    && resultats.verification.ratio_utilisation_pct <= 100)
+
+  const handleDownloadPlanDePose = async () => {
+    setDownloadingPlanDePose(true)
+    try {
+      const blob = await exportsApi.downloadPlanDePose(calcul.id)
+      downloadFile(blob, `plan_de_pose_${calcul.name.replace(/\s+/g, '_')}.pdf`)
+    } catch (error) {
+      console.error('Erreur téléchargement plan de pose:', error)
+      alert('Erreur lors du téléchargement du plan de pose')
+    } finally {
+      setDownloadingPlanDePose(false)
+    }
+  }
 
   // Not computed yet
   if (status === 'draft' || status === 'pending') {
@@ -89,6 +107,27 @@ export default function PlancherResultats({ resultats, status, errorMessage }: P
           </div>
         </div>
       </div>
+
+      {/* Export actions */}
+      {verificationOk && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Documents</h2>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleDownloadPlanDePose}
+              disabled={downloadingPlanDePose}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {downloadingPlanDePose ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="h-4 w-4" />
+              )}
+              Plan de pose (PDF)
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Selected poutrelle */}
       {resultats.poutrelle && (

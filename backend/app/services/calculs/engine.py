@@ -1,11 +1,16 @@
 """
 Moteur de calcul principal pour ConcreteFlow.
 Dispatch les calculs vers les modules spécifiques selon le type de produit.
+
+Supporte plusieurs normes de calcul:
+- Eurocode 2 (EC2) - Norme européenne
+- ACI 318 - American Concrete Institute (USA)
+- BAEL 91 - Ancienne norme française
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 
 from app.models.calcul import TypeProduit
-from app.services.calculs.eurocode import EurocodeCalculator
+from app.services.calculs.normes import NormeType, NormeFactory, NormeBase
 from app.services.calculs.flexion import calcul_flexion
 from app.services.calculs.fleche import calcul_fleche
 from app.services.calculs.effort_tranchant import calcul_effort_tranchant
@@ -16,7 +21,7 @@ from app.services.calculs.plancher_poutrelles_hourdis import calcul_plancher_pou
 def run_calculation(
     type_produit: TypeProduit,
     parametres: Dict[str, Any],
-    norme: str = "EC2",
+    norme: Union[str, NormeType] = NormeType.EC2,
     cahier_portees_data: Optional[List[Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
@@ -25,7 +30,7 @@ def run_calculation(
     Args:
         type_produit: Type of precast element
         parametres: Input parameters (geometry, loads, materials, conditions)
-        norme: Design code (EC2, BPEL, DTU)
+        norme: Design code (NormeType enum or string like "EC2", "ACI318", "BAEL91")
         cahier_portees_data: Data from portees limit table (for PLANCHER_POUTRELLES_HOURDIS)
 
     Returns:
@@ -37,8 +42,14 @@ def run_calculation(
             raise ValueError("Cahier de portées requis pour le calcul plancher poutrelles-hourdis")
         return calcul_plancher_poutrelles_hourdis(parametres, cahier_portees_data)
 
-    # Initialize calculator with normative parameters
-    calculator = EurocodeCalculator(norme=norme)
+    # Get norme calculator using factory
+    if isinstance(norme, str):
+        calculator = NormeFactory.get_norme_from_code(norme)
+    elif isinstance(norme, NormeType):
+        calculator = NormeFactory.get_norme(norme)
+    else:
+        # Assume it's a NormeType enum value
+        calculator = NormeFactory.get_norme(norme)
 
     # Extract parameters
     geometrie = parametres.get("geometrie", {})
@@ -46,11 +57,15 @@ def run_calculation(
     materiaux = parametres.get("materiaux", {})
     conditions = parametres.get("conditions", {})
 
-    # Material properties
-    calculator.set_materials(
-        classe_beton=materiaux.get("classe_beton", "C30/37"),
-        classe_acier=materiaux.get("classe_acier", "S500")
+    # Material properties - get defaults for the selected norme
+    defaults = NormeFactory.get_default_materials(
+        norme if isinstance(norme, NormeType) else NormeType(norme) if hasattr(NormeType, '_value2member_map_') and norme in NormeType._value2member_map_ else NormeType.EC2
     )
+    classe_beton = materiaux.get("classe_beton", defaults.get("classe_beton", "C30/37"))
+    classe_acier = materiaux.get("classe_acier", defaults.get("classe_acier", "S500"))
+
+    calculator.set_beton(classe_beton)
+    calculator.set_acier(classe_acier)
 
     # Geometry
     portee = geometrie.get("portee", 5.0)  # m
@@ -61,25 +76,37 @@ def run_calculation(
     g = charges.get("permanentes", 5.0)  # Permanent loads
     q = charges.get("exploitation", 2.5)  # Variable loads
 
-    # Compute load combinations (EC0)
-    # ELU: 1.35*G + 1.5*Q
-    # ELS: G + Q
-    q_elu = 1.35 * g + 1.5 * q
-    q_els = g + q
+    # Compute load combinations using the selected norm's coefficients
+    q_elu = calculator.combinaison_elu(g, q)
+    q_els = calculator.combinaison_els(g, q)
 
     # Results container
     resultats = {
         "input_summary": {
             "type_produit": type_produit.value,
+            "norme": calculator.code,
+            "norme_nom": calculator.nom_complet,
             "portee_m": portee,
             "largeur_m": largeur,
             "hauteur_m": hauteur,
+            "classe_beton": classe_beton,
+            "classe_acier": classe_acier,
             "charge_permanente_kN_m2": g,
             "charge_exploitation_kN_m2": q,
             "charge_elu_kN_m": q_elu * largeur,
-            "charge_els_kN_m": q_els * largeur
+            "charge_els_kN_m": q_els * largeur,
+            "coefficients": {
+                "gamma_c": calculator.gamma_c,
+                "gamma_s": calculator.gamma_s,
+                "gamma_g": calculator.gamma_g,
+                "gamma_q": calculator.gamma_q,
+            }
         }
     }
+
+    # Get material properties from the calculator
+    fck = calculator.beton.fck
+    fyk = calculator.acier.fy
 
     # 1. Flexion calculation
     flexion_result = calcul_flexion(
@@ -88,8 +115,8 @@ def run_calculation(
         hauteur=hauteur,
         q_elu=q_elu * largeur,  # kN/m
         q_els=q_els * largeur,
-        fck=calculator.fck,
-        fyk=calculator.fyk,
+        fck=fck,
+        fyk=fyk,
         gamma_c=calculator.gamma_c,
         gamma_s=calculator.gamma_s
     )
@@ -101,8 +128,8 @@ def run_calculation(
         largeur=largeur,
         hauteur=hauteur,
         q_elu=q_elu * largeur,
-        fck=calculator.fck,
-        fyk=calculator.fyk,
+        fck=fck,
+        fyk=fyk,
         as_longitudinal=flexion_result.get("as_requis_cm2", 0) * 100  # mm²
     )
     resultats["effort_tranchant"] = tranchant_result
@@ -113,7 +140,7 @@ def run_calculation(
         largeur=largeur,
         hauteur=hauteur,
         q_els=q_els * largeur,
-        fck=calculator.fck,
+        fck=fck,
         as_tension=flexion_result.get("as_requis_cm2", 0) * 100  # mm²
     )
     resultats["fleche"] = fleche_result
@@ -137,10 +164,11 @@ def run_calculation(
 
     resultats["summary"] = {
         "verification_globale": "OK" if all_ok else "NON CONFORME",
+        "norme_utilisee": calculator.code,
         "flexion_ok": flexion_result.get("verification_ok", False),
         "tranchant_ok": tranchant_result.get("verification_ok", False),
         "fleche_ok": fleche_result.get("verification_ok", False),
-        "message": "Toutes les vérifications sont satisfaites." if all_ok else "Certaines vérifications ne sont pas satisfaites. Voir détails."
+        "message": f"Toutes les vérifications sont satisfaites selon {calculator.nom_complet}." if all_ok else f"Certaines vérifications ne sont pas satisfaites selon {calculator.nom_complet}. Voir détails."
     }
 
     return resultats

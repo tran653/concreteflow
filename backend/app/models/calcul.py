@@ -6,6 +6,7 @@ import enum
 
 from app.core.database import Base
 from app.core.types import GUID
+from app.services.calculs.normes import NormeType
 
 
 class TypeProduit(str, enum.Enum):
@@ -38,8 +39,8 @@ class Calcul(Base):
     name = Column(String(255), nullable=False)
     type_produit = Column(Enum(TypeProduit), nullable=False)
 
-    # Normative reference
-    norme = Column(String(50), default="EC2")  # EC2, BPEL, DTU
+    # Normative reference (can override project default)
+    norme = Column(Enum(NormeType), default=NormeType.EC2, nullable=False)
 
     # Input parameters (JSON for flexibility)
     parametres = Column(JSON, nullable=False, default=dict)

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { projetsApi } from '@/services/api'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -15,7 +15,8 @@ import {
   Loader2,
 } from 'lucide-react'
 import { cn, statusLabels, statusColors, formatDate } from '@/lib/utils'
-import type { ProjetCreate } from '@/types'
+import type { ProjetCreate, NormeType } from '@/types'
+import { NormeSelector, NormeBadge } from '@/components/common'
 
 const projetSchema = z.object({
   reference: z.string().min(1, 'Référence requise'),
@@ -23,6 +24,7 @@ const projetSchema = z.object({
   description: z.string().optional(),
   client_name: z.string().optional(),
   city: z.string().optional(),
+  norme: z.enum(['EC2', 'ACI318', 'BAEL91', 'BS8110', 'CSA_A23']).default('EC2'),
 })
 
 export default function ProjetsPage() {
@@ -39,9 +41,13 @@ export default function ProjetsPage() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<ProjetCreate>({
     resolver: zodResolver(projetSchema),
+    defaultValues: {
+      norme: 'EC2',
+    },
   })
 
   const createMutation = useMutation({
@@ -122,11 +128,16 @@ export default function ProjetsPage() {
                 </span>
               </div>
 
-              {projet.client_name && (
-                <p className="text-sm text-gray-600 mb-2">
-                  Client: {projet.client_name}
-                </p>
-              )}
+              <div className="flex items-center gap-2 mb-2">
+                {projet.client_name && (
+                  <p className="text-sm text-gray-600">
+                    Client: {projet.client_name}
+                  </p>
+                )}
+                {projet.norme && (
+                  <NormeBadge norme={projet.norme} size="sm" />
+                )}
+              </div>
 
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 {projet.city && (
@@ -215,6 +226,21 @@ export default function ProjetsPage() {
                   {...register('city')}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                   placeholder="Paris"
+                />
+              </div>
+
+              <div>
+                <Controller
+                  name="norme"
+                  control={control}
+                  render={({ field }) => (
+                    <NormeSelector
+                      value={field.value as NormeType}
+                      onChange={field.onChange}
+                      label="Norme de calcul"
+                      description="Norme par défaut pour les calculs du projet"
+                    />
+                  )}
                 />
               </div>
 

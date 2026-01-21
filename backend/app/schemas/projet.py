@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from app.models.projet import ProjetStatus
+from app.services.calculs.normes import NormeType
 
 
 class ProjetBase(BaseModel):
@@ -18,6 +19,7 @@ class ProjetBase(BaseModel):
     city: Optional[str] = None
     postal_code: Optional[str] = None
     country: str = "France"
+    norme: NormeType = NormeType.EC2
 
 
 class ProjetCreate(ProjetBase):
@@ -37,6 +39,7 @@ class ProjetUpdate(BaseModel):
     postal_code: Optional[str] = None
     country: Optional[str] = None
     status: Optional[ProjetStatus] = None
+    norme: Optional[NormeType] = None
     date_start: Optional[datetime] = None
     date_delivery: Optional[datetime] = None
 
@@ -45,6 +48,7 @@ class ProjetResponse(ProjetBase):
     id: UUID
     tenant_id: UUID
     status: ProjetStatus
+    norme: NormeType
     date_start: Optional[datetime] = None
     date_delivery: Optional[datetime] = None
     created_at: datetime

@@ -26,7 +26,9 @@ from app.schemas.calcul import (
     CalculUpdate,
     CalculResponse,
     CalculListResponse,
-    CalculRunRequest
+    CalculRunRequest,
+    NormeInfo,
+    NormeListResponse
 )
 from app.schemas.fabricant import (
     FabricantCreate,
@@ -72,6 +74,8 @@ __all__ = [
     "CalculResponse",
     "CalculListResponse",
     "CalculRunRequest",
+    "NormeInfo",
+    "NormeListResponse",
     # Fabricant
     "FabricantCreate",
     "FabricantUpdate",

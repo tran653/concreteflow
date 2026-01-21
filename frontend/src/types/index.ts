@@ -1,3 +1,37 @@
+// Norme types
+export type NormeType = 'EC2' | 'ACI318' | 'BAEL91' | 'BS8110' | 'CSA_A23'
+
+export interface NormeInfo {
+  code: string
+  display_name: string
+  region: string
+  implemented: boolean
+  classes_beton?: string[]
+  classes_acier?: string[]
+  coefficients?: {
+    gamma_c: number
+    gamma_s: number
+    gamma_g: number
+    gamma_q: number
+  }
+}
+
+export const NORME_LABELS: Record<NormeType, string> = {
+  'EC2': 'Eurocode 2 (Europe)',
+  'ACI318': 'ACI 318 (USA)',
+  'BAEL91': 'BAEL 91 (France)',
+  'BS8110': 'BS 8110 (UK)',
+  'CSA_A23': 'CSA A23.3 (Canada)',
+}
+
+export const NORME_FLAGS: Record<NormeType, string> = {
+  'EC2': '🇪🇺',
+  'ACI318': '🇺🇸',
+  'BAEL91': '🇫🇷',
+  'BS8110': '🇬🇧',
+  'CSA_A23': '🇨🇦',
+}
+
 // User & Auth types
 export interface User {
   id: string
@@ -50,6 +84,7 @@ export interface Projet {
   postal_code?: string
   country: string
   status: ProjetStatus
+  norme: NormeType
   date_start?: string
   date_delivery?: string
   created_at: string
@@ -70,6 +105,7 @@ export interface ProjetCreate {
   city?: string
   postal_code?: string
   country?: string
+  norme?: NormeType
   date_start?: string
   date_delivery?: string
 }
@@ -81,7 +117,7 @@ export interface Calcul {
   plan_id?: string
   name: string
   type_produit: TypeProduit
-  norme: string
+  norme: NormeType
   parametres: CalculParametres
   resultats: CalculResultats
   status: CalculStatus
@@ -104,6 +140,7 @@ export interface CalculParametres {
     enrobage?: number
     entraxe_souhaite?: number  // Pour plancher poutrelles-hourdis
     hauteur_hourdis?: number   // Pour plancher poutrelles-hourdis
+    fabricant_id?: string      // Pour plancher poutrelles-hourdis
   }
   charges: {
     permanentes?: number
@@ -124,6 +161,9 @@ export interface CalculParametres {
 }
 
 export interface CalculResultats {
+  verification_ok?: boolean  // Pour plancher poutrelles-hourdis
+  message?: string           // Pour plancher poutrelles-hourdis
+  nombre_candidates?: number // Pour plancher poutrelles-hourdis
   flexion?: {
     moment_elu_kNm?: number
     moment_els_kNm?: number
@@ -151,6 +191,7 @@ export interface CalculResultats {
   }
   summary?: {
     verification_globale?: string
+    norme_utilisee?: string
     message?: string
   }
   // Pour plancher poutrelles-hourdis
@@ -189,7 +230,7 @@ export interface CalculCreate {
   plan_id?: string
   name: string
   type_produit: TypeProduit
-  norme?: string
+  norme?: NormeType
   parametres?: CalculParametres
 }
 

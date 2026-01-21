@@ -1,11 +1,14 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
+import tempfile
+import os
 
 from app.core.database import get_db
+from app.services.pdf_import import PdfPlanExtractor, ExtractedPlanData
 from app.models.user import User, UserRole
 from app.models.projet import Projet
 from app.models.calcul import Calcul, CalculStatus, TypeProduit
@@ -16,12 +19,61 @@ from app.schemas import (
     CalculUpdate,
     CalculResponse,
     CalculListResponse,
-    CalculRunRequest
+    CalculRunRequest,
+    NormeInfo,
+    NormeListResponse
 )
 from app.api.deps import get_current_active_user, require_engineer
 from app.services.calculs.engine import run_calculation
+from app.services.calculs.normes import NormeType, NormeFactory
 
 router = APIRouter(prefix="/calculs", tags=["Calculs"])
+
+
+@router.get("/normes", response_model=NormeListResponse)
+async def list_normes():
+    """
+    List available calculation norms.
+
+    Returns information about all supported norms including:
+    - Code and display name
+    - Region of application
+    - Available concrete and steel classes
+    - Safety coefficients
+    """
+    normes_data = NormeFactory.list_normes()
+    normes = [NormeInfo(**n) for n in normes_data]
+    return NormeListResponse(normes=normes)
+
+
+@router.get("/normes/{norme_code}")
+async def get_norme_details(norme_code: str):
+    """
+    Get detailed information about a specific norm.
+
+    Args:
+        norme_code: Norm code (EC2, ACI318, BAEL91, etc.)
+    """
+    try:
+        norme = NormeFactory.get_norme_from_code(norme_code)
+        return {
+            "code": norme.code,
+            "nom_complet": norme.nom_complet,
+            "region": norme.region,
+            "coefficients": {
+                "gamma_c": norme.gamma_c,
+                "gamma_s": norme.gamma_s,
+                "gamma_g": norme.gamma_g,
+                "gamma_q": norme.gamma_q,
+            },
+            "classes_beton": norme.get_classes_beton(),
+            "classes_acier": norme.get_classes_acier(),
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
 
 
 @router.get("", response_model=List[CalculListResponse])
@@ -299,3 +351,83 @@ async def get_calcul_results(
         "resultats": calcul.resultats,
         "computed_at": calcul.computed_at.isoformat() if calcul.computed_at else None
     }
+
+
+@router.post("/import-pdf")
+async def import_pdf_plan(
+    file: UploadFile = File(...),
+    use_ocr: bool = Query(False, description="Utiliser OCR pour les PDF scannés"),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Import a PDF plan and extract structural parameters.
+
+    Extracts:
+    - Portées (spans)
+    - Poutrelles (joists)
+    - Charges (loads)
+    - Entre-axes (spacing)
+    - Dalle thickness
+    - Hourdis type
+
+    Returns extracted data for user validation before creating calculation.
+    """
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le fichier doit être au format PDF"
+        )
+
+    # Save uploaded file temporarily
+    temp_dir = tempfile.mkdtemp()
+    temp_path = os.path.join(temp_dir, file.filename)
+
+    try:
+        content = await file.read()
+        with open(temp_path, 'wb') as f:
+            f.write(content)
+
+        # Extract data from PDF
+        extractor = PdfPlanExtractor(temp_path, use_ocr=use_ocr)
+        extracted = extractor.extract()
+
+        # Convert to response format
+        def format_value(v):
+            if v is None:
+                return None
+            return {
+                "value": v.value,
+                "confidence": v.confidence,
+                "source": v.source
+            }
+
+        return {
+            "success": True,
+            "filename": file.filename,
+            "extraction_confidence": extracted.confidence_globale,
+            "data": {
+                "portees": [format_value(p) for p in extracted.portees],
+                "poutrelles": [format_value(p) for p in extracted.poutrelles],
+                "charges_permanentes": [format_value(c) for c in extracted.charges_permanentes],
+                "charges_exploitation": [format_value(c) for c in extracted.charges_exploitation],
+                "entre_axes": [format_value(e) for e in extracted.entre_axes],
+                "epaisseur_dalle": format_value(extracted.epaisseur_dalle),
+                "type_hourdis": format_value(extracted.type_hourdis),
+            },
+            "raw_text_preview": extracted.texte_brut[:500] if extracted.texte_brut else None,
+            "tables_found": len(extracted.tables_extraites),
+            "message": "Données extraites. Veuillez vérifier et ajuster avant de créer le calcul."
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de l'extraction du PDF: {str(e)}"
+        )
+    finally:
+        # Cleanup temp files
+        try:
+            os.remove(temp_path)
+            os.rmdir(temp_dir)
+        except:
+            pass
