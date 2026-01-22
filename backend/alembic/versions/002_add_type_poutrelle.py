@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '002_add_type_poutrelle'
-down_revision = '001_add_norme_field'
+down_revision = '001_add_norme'
 branch_labels = None
 depends_on = None
 
