@@ -49,6 +49,72 @@ export default function PlancherPoutrellesForm({ parametres, onChange }: Props) 
 
   return (
     <div className="space-y-6">
+      {/* Type de poutrelle */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="font-semibold text-gray-900 mb-4">Type de plancher</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <label
+            className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+              (parametres.geometrie?.type_poutrelle || 'precontrainte') === 'precontrainte'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <input
+              type="radio"
+              name="type_poutrelle"
+              value="precontrainte"
+              checked={(parametres.geometrie?.type_poutrelle || 'precontrainte') === 'precontrainte'}
+              onChange={() =>
+                onChange({
+                  ...parametres,
+                  geometrie: {
+                    ...parametres.geometrie,
+                    type_poutrelle: 'precontrainte'
+                  }
+                })
+              }
+              className="sr-only"
+            />
+            <svg className="h-12 w-12 mb-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span className="font-medium text-gray-900">Poutrelle précontrainte</span>
+            <span className="text-xs text-gray-500 text-center mt-1">Béton précontraint par armatures</span>
+          </label>
+
+          <label
+            className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+              parametres.geometrie?.type_poutrelle === 'treillis'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <input
+              type="radio"
+              name="type_poutrelle"
+              value="treillis"
+              checked={parametres.geometrie?.type_poutrelle === 'treillis'}
+              onChange={() =>
+                onChange({
+                  ...parametres,
+                  geometrie: {
+                    ...parametres.geometrie,
+                    type_poutrelle: 'treillis'
+                  }
+                })
+              }
+              className="sr-only"
+            />
+            <svg className="h-12 w-12 mb-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6l4 4-4 4M8 6l4 4-4 4M12 6l4 4-4 4M16 6l4 4-4 4" />
+            </svg>
+            <span className="font-medium text-gray-900">Poutrelle treillis</span>
+            <span className="text-xs text-gray-500 text-center mt-1">Treillis métallique soudé</span>
+          </label>
+        </div>
+      </div>
+
       {/* Cahier de portées */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Cahier de portées</h2>

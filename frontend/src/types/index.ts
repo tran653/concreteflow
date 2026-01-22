@@ -141,6 +141,7 @@ export interface CalculParametres {
     entraxe_souhaite?: number  // Pour plancher poutrelles-hourdis
     hauteur_hourdis?: number   // Pour plancher poutrelles-hourdis
     fabricant_id?: string      // Pour plancher poutrelles-hourdis
+    type_poutrelle?: 'precontrainte' | 'treillis'  // Type de poutrelle
   }
   charges: {
     permanentes?: number
