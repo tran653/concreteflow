@@ -15,6 +15,9 @@ class CahierPortees(Base):
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     fabricant_id = Column(GUID(), ForeignKey("fabricants.id"), nullable=False)
 
+    # Type de poutrelle
+    type_poutrelle = Column(String(50), default='precontrainte')  # 'precontrainte' ou 'treillis'
+
     # Métadonnées du cahier
     nom = Column(String(255), nullable=False)  # Ex: "Gamme standard 2024"
     version = Column(String(50))  # Ex: "v2.1"

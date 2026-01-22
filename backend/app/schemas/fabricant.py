@@ -76,6 +76,7 @@ class CahierPorteesUpdate(BaseModel):
 class CahierPorteesResponse(CahierPorteesBase):
     id: UUID
     fabricant_id: UUID
+    type_poutrelle: str = "precontrainte"
     fichier_original: Optional[str] = None
     date_validite: Optional[datetime] = None
     created_at: datetime
@@ -89,6 +90,7 @@ class CahierPorteesResponse(CahierPorteesBase):
 class CahierPorteesListResponse(BaseModel):
     id: UUID
     nom: str
+    type_poutrelle: str = "precontrainte"
     version: Optional[str] = None
     fichier_original: Optional[str] = None
     created_at: datetime

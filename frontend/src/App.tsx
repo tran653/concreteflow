@@ -12,6 +12,7 @@ import ProjetsPage from '@/pages/projets/ProjetsPage'
 import ProjetDetailPage from '@/pages/projets/ProjetDetailPage'
 import CalculsPage from '@/pages/calculs/CalculsPage'
 import CalculEditorPage from '@/pages/calculs/CalculEditorPage'
+import ReglagesPage from '@/pages/reglages/ReglagesPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -45,6 +46,7 @@ function App() {
         <Route path="projets/:id" element={<ProjetDetailPage />} />
         <Route path="calculs" element={<CalculsPage />} />
         <Route path="calculs/:id" element={<CalculEditorPage />} />
+        <Route path="reglages" element={<ReglagesPage />} />
       </Route>
 
       {/* Catch all */}

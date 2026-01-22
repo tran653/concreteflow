@@ -17,6 +17,7 @@ const navigation = [
   { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Projets', href: '/projets', icon: FolderKanban },
   { name: 'Calculs', href: '/calculs', icon: Calculator },
+  { name: 'Réglages', href: '/reglages', icon: Settings },
 ]
 
 export default function MainLayout() {
@@ -115,9 +116,6 @@ export default function MainLayout() {
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex-1" />
-          <button className="p-2 hover:bg-gray-100 rounded-lg">
-            <Settings className="h-5 w-5 text-gray-500" />
-          </button>
         </header>
 
         {/* Page content */}

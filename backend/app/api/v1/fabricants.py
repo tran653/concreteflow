@@ -217,6 +217,7 @@ async def import_cahier_portees(
     file: UploadFile = File(...),
     nom: Optional[str] = Query(None, description="Nom du cahier"),
     version: Optional[str] = Query(None, description="Version du cahier"),
+    type_poutrelle: str = Query("precontrainte", description="Type de poutrelle: precontrainte ou treillis"),
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
@@ -260,6 +261,7 @@ async def import_cahier_portees(
     # Création cahier
     cahier = CahierPortees(
         fabricant_id=fabricant_id,
+        type_poutrelle=type_poutrelle,
         nom=nom or file.filename,
         version=version,
         fichier_original=file.filename,

@@ -262,9 +262,12 @@ export interface FabricantCreate {
 }
 
 // Cahier de portées types
+export type TypePoutrelle = 'precontrainte' | 'treillis'
+
 export interface CahierPortees {
   id: string
   fabricant_id: string
+  type_poutrelle: TypePoutrelle
   nom: string
   version?: string
   fichier_original?: string
