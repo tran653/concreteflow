@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { projetsApi, calculsApi, plansApi } from '@/services/api'
+import { projetsApi, calculsApi } from '@/services/api'
 import {
   ArrowLeft,
   Calculator,
@@ -11,21 +11,17 @@ import {
   Mail,
   Calendar,
   Loader2,
-  Upload,
-  Map,
   Trash2,
+  Plus,
+  Layers,
 } from 'lucide-react'
 import { cn, statusLabels, statusColors, formatDate, typeProduitLabels } from '@/lib/utils'
-import DxfUploader from '@/components/calculs/DxfUploader'
-import PlanCanvas from '@/components/calculs/PlanCanvas'
 import ExportButtons from '@/components/calculs/ExportButtons'
 
 export default function ProjetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [showDxfUploader, setShowDxfUploader] = useState(false)
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const deleteMutation = useMutation({
@@ -50,29 +46,18 @@ export default function ProjetDetailPage() {
     enabled: !!id,
   })
 
-  const { data: stats } = useQuery({
-    queryKey: ['projet-stats', id],
-    queryFn: () => projetsApi.getStats(id!),
-    enabled: !!id,
-  })
-
   const { data: calculs = [] } = useQuery({
     queryKey: ['calculs', { projet_id: id }],
     queryFn: () => calculsApi.list({ projet_id: id }),
     enabled: !!id,
   })
 
-  const { data: plans = [], refetch: refetchPlans } = useQuery({
-    queryKey: ['plans', id],
-    queryFn: () => plansApi.list(id!),
-    enabled: !!id,
-  })
-
-  const { data: selectedPlanGeometry } = useQuery({
-    queryKey: ['plan-geometry', selectedPlanId],
-    queryFn: () => plansApi.getGeometry(selectedPlanId!),
-    enabled: !!selectedPlanId,
-  })
+  // Compter les statuts
+  const stats = {
+    total: calculs.length,
+    completed: calculs.filter((c: any) => c.status?.toLowerCase() === 'completed').length,
+    pending: calculs.filter((c: any) => ['draft', 'pending', 'computing'].includes(c.status?.toLowerCase())).length,
+  }
 
   if (loadingProjet) {
     return (
@@ -142,93 +127,18 @@ export default function ProjetDetailPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Plans</p>
-          <p className="text-2xl font-bold">{plans.length || stats?.plans_count || 0}</p>
+          <p className="text-sm text-gray-500">Niveaux</p>
+          <p className="text-2xl font-bold">{stats.total}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Calculs</p>
-          <p className="text-2xl font-bold">{stats?.calculs_count || 0}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Validés</p>
-          <p className="text-2xl font-bold text-green-600">
-            {stats?.calculs_completed || 0}
-          </p>
+          <p className="text-sm text-gray-500">Calculés</p>
+          <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-500">En attente</p>
-          <p className="text-2xl font-bold text-yellow-600">
-            {stats?.calculs_pending || 0}
-          </p>
-        </div>
-      </div>
-
-      {/* Plans section */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 border-b flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">Plans DXF</h2>
-          <button
-            onClick={() => setShowDxfUploader(!showDxfUploader)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/90"
-          >
-            <Upload className="h-4 w-4" />
-            Importer DXF
-          </button>
-        </div>
-
-        {showDxfUploader && (
-          <div className="p-4 border-b bg-gray-50">
-            <DxfUploader
-              projetId={id!}
-              onUploadComplete={(plan) => {
-                setShowDxfUploader(false)
-                setSelectedPlanId(plan.id)
-                refetchPlans()
-              }}
-            />
-          </div>
-        )}
-
-        <div className="p-4">
-          {plans.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Map className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>Aucun plan importé</p>
-              <p className="text-sm">Importez un fichier DXF pour commencer</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Plan list */}
-              <div className="flex flex-wrap gap-2">
-                {plans.map((plan: any) => (
-                  <button
-                    key={plan.id}
-                    onClick={() => setSelectedPlanId(plan.id)}
-                    className={cn(
-                      'px-4 py-2 rounded-lg border text-sm font-medium transition-colors',
-                      selectedPlanId === plan.id
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-primary'
-                    )}
-                  >
-                    {plan.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Plan viewer */}
-              {selectedPlanGeometry && (
-                <PlanCanvas
-                  bounds={selectedPlanGeometry.bounds}
-                  contours={selectedPlanGeometry.contours}
-                  openings={selectedPlanGeometry.openings}
-                  height={400}
-                />
-              )}
-            </div>
-          )}
+          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
         </div>
       </div>
 
@@ -280,42 +190,52 @@ export default function ProjetDetailPage() {
           </div>
         </div>
 
-        {/* Calculations */}
+        {/* Niveaux (Calculs) */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow">
           <div className="p-4 border-b flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Calculs</h2>
+            <h2 className="font-semibold text-gray-900">Niveaux du bâtiment</h2>
             <Link
-              to={`/calculs?projet_id=${projet.id}`}
-              className="text-sm text-primary hover:underline"
+              to={`/calculs?projet_id=${projet.id}&projet_name=${encodeURIComponent(projet.name)}`}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
             >
-              Nouveau calcul
+              <Plus className="h-4 w-4" />
+              Ajouter un niveau
             </Link>
           </div>
 
           <div className="divide-y">
             {calculs.length === 0 ? (
               <div className="p-8 text-center">
-                <Calculator className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Aucun calcul pour ce projet</p>
+                <Layers className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Aucun niveau pour ce projet</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Ajoutez les niveaux du bâtiment (RDC, Étage 1, etc.)
+                </p>
                 <Link
-                  to={`/calculs?projet_id=${projet.id}`}
-                  className="inline-block mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+                  to={`/calculs?projet_id=${projet.id}&projet_name=${encodeURIComponent(projet.name)}`}
+                  className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
                 >
-                  Créer un calcul
+                  <Plus className="h-4 w-4" />
+                  Ajouter un niveau
                 </Link>
               </div>
             ) : (
-              calculs.map((calcul) => (
+              calculs.map((calcul: any) => (
                 <Link
                   key={calcul.id}
                   to={`/calculs/${calcul.id}`}
                   className="p-4 hover:bg-gray-50 flex items-center justify-between"
                 >
-                  <div>
-                    <p className="font-medium text-gray-900">{calcul.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {typeProduitLabels[calcul.type_produit]} - {formatDate(calcul.created_at)}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Layers className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{calcul.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {typeProduitLabels[calcul.type_produit]} - {formatDate(calcul.created_at)}
+                      </p>
+                    </div>
                   </div>
                   <span
                     className={cn(

@@ -18,23 +18,20 @@ import { NormeSelector, NormeBadge } from '@/components/common'
 
 const calculSchema = z.object({
   projet_id: z.string().min(1, 'Projet requis'),
-  name: z.string().min(1, 'Nom requis'),
-  type_produit: z.enum(['poutrelle', 'predalle', 'dalle_alveolaire', 'poutre', 'dalle_pleine']),
+  name: z.string().min(1, 'Nom du niveau requis'),
+  type_produit: z.enum(['plancher_poutrelles_hourdis']),
   norme: z.enum(['EC2', 'ACI318', 'BAEL91', 'BS8110', 'CSA_A23']).default('EC2'),
 })
 
-const typesProduit: { value: TypeProduit; label: string }[] = [
-  { value: 'poutrelle', label: 'Poutrelle' },
-  { value: 'predalle', label: 'Prédalle' },
-  { value: 'dalle_alveolaire', label: 'Dalle alvéolaire' },
-  { value: 'poutre', label: 'Poutre' },
-  { value: 'dalle_pleine', label: 'Dalle pleine' },
+const typesProduit: { value: string; label: string; description: string }[] = [
+  { value: 'plancher_poutrelles_hourdis', label: 'Plancher poutrelles-hourdis', description: 'Poutrelles précontraintes ou treillis' },
 ]
 
 export default function CalculsPage() {
   const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const projetIdFromUrl = searchParams.get('projet_id')
+  const projetNameFromUrl = searchParams.get('projet_name')
 
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(!!projetIdFromUrl)
@@ -193,7 +190,9 @@ export default function CalculsPage() {
           />
           <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Nouveau calcul</h2>
+              <h2 className="text-lg font-semibold">
+                {projetIdFromUrl ? 'Ajouter un niveau' : 'Nouveau calcul'}
+              </h2>
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="p-1 hover:bg-gray-100 rounded"
@@ -207,17 +206,26 @@ export default function CalculsPage() {
                 <label className="block text-sm font-medium text-gray-700">
                   Projet *
                 </label>
-                <select
-                  {...register('projet_id')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
-                >
-                  <option value="">Sélectionner un projet</option>
-                  {projets.map((projet) => (
-                    <option key={projet.id} value={projet.id}>
-                      {projet.reference} - {projet.name}
-                    </option>
-                  ))}
-                </select>
+                {projetIdFromUrl && projetNameFromUrl ? (
+                  <>
+                    <input type="hidden" {...register('projet_id')} />
+                    <div className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700">
+                      {decodeURIComponent(projetNameFromUrl)}
+                    </div>
+                  </>
+                ) : (
+                  <select
+                    {...register('projet_id')}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
+                  >
+                    <option value="">Sélectionner un projet</option>
+                    {projets.map((projet) => (
+                      <option key={projet.id} value={projet.id}>
+                        {projet.reference} - {projet.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {errors.projet_id && (
                   <p className="mt-1 text-sm text-red-600">
                     {errors.projet_id.message}
@@ -227,12 +235,12 @@ export default function CalculsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Nom du calcul *
+                  Nom du niveau *
                 </label>
                 <input
                   {...register('name')}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
-                  placeholder="Plancher RDC - Zone A"
+                  placeholder="RDC, Étage 1, Étage 2..."
                 />
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-600">
