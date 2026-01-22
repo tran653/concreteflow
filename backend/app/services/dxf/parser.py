@@ -194,31 +194,42 @@ class DXFParser:
 
     def parse_bytes(self, content: bytes, filename: str) -> DXFParseResult:
         """Parse un contenu DXF depuis des bytes."""
+        import tempfile
+        import os
+
         try:
-            from io import BytesIO
-            stream = BytesIO(content)
+            # ezdxf nécessite un fichier réel, pas un BytesIO
+            # Créer un fichier temporaire
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.dxf', delete=False) as tmp:
+                tmp.write(content)
+                tmp_path = tmp.name
 
-            self.doc = ezdxf.read(stream)
-            self.msp = self.doc.modelspace()
+            try:
+                self.doc = ezdxf.readfile(tmp_path)
+                self.msp = self.doc.modelspace()
 
-            units = self._get_units()
-            layers = self._get_layers()
-            entities = self._extract_entities()
-            bounds = self._calculate_bounds(entities)
-            contours = self._identify_contours(entities)
-            openings = self._identify_openings(entities)
+                units = self._get_units()
+                layers = self._get_layers()
+                entities = self._extract_entities()
+                bounds = self._calculate_bounds(entities)
+                contours = self._identify_contours(entities)
+                openings = self._identify_openings(entities)
 
-            return DXFParseResult(
-                success=True,
-                filename=filename,
-                units=units,
-                scale=1.0,
-                bounds=bounds,
-                layers=layers,
-                entities=entities,
-                contours=contours,
-                openings=openings
-            )
+                return DXFParseResult(
+                    success=True,
+                    filename=filename,
+                    units=units,
+                    scale=1.0,
+                    bounds=bounds,
+                    layers=layers,
+                    entities=entities,
+                    contours=contours,
+                    openings=openings
+                )
+            finally:
+                # Nettoyer le fichier temporaire
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
 
         except Exception as e:
             return DXFParseResult(
