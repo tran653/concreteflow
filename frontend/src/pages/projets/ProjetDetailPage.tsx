@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { projetsApi, calculsApi, plansApi } from '@/services/api'
 import {
   ArrowLeft,
@@ -22,8 +22,27 @@ import ExportButtons from '@/components/calculs/ExportButtons'
 
 export default function ProjetDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [showDxfUploader, setShowDxfUploader] = useState(false)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const deleteMutation = useMutation({
+    mutationFn: () => projetsApi.delete(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projets'] })
+      navigate('/projets')
+    },
+  })
+
+  const handleDelete = () => {
+    if (showDeleteConfirm) {
+      deleteMutation.mutate()
+    } else {
+      setShowDeleteConfirm(true)
+    }
+  }
 
   const { data: projet, isLoading: loadingProjet } = useQuery({
     queryKey: ['projet', id],
@@ -86,6 +105,32 @@ export default function ProjetDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900">{projet.name}</h1>
         </div>
         <ExportButtons projetId={id} projetReference={projet.reference} />
+        <button
+          onClick={handleDelete}
+          disabled={deleteMutation.isPending}
+          className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
+            showDeleteConfirm
+              ? 'bg-red-600 text-white hover:bg-red-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-red-600'
+          )}
+          title="Supprimer le projet"
+        >
+          <Trash2 className="h-4 w-4" />
+          {showDeleteConfirm && (
+            <span className="text-sm">
+              {deleteMutation.isPending ? 'Suppression...' : 'Confirmer'}
+            </span>
+          )}
+        </button>
+        {showDeleteConfirm && (
+          <button
+            onClick={() => setShowDeleteConfirm(false)}
+            className="px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Annuler
+          </button>
+        )}
         <span
           className={cn(
             'px-3 py-1 text-sm rounded-full',
