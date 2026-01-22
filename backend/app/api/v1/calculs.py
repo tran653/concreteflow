@@ -388,8 +388,8 @@ async def import_pdf_plan(
             f.write(content)
 
         # Extract data from PDF
-        extractor = PdfPlanExtractor(temp_path, use_ocr=use_ocr)
-        extracted = extractor.extract()
+        extractor = PdfPlanExtractor(use_ocr=use_ocr)
+        extracted = extractor.extract(temp_path)
 
         # Convert to response format
         def format_value(v):
